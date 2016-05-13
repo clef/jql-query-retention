@@ -37,7 +37,9 @@
  */
 
 import RetentionState from './helpers/RetentionState'
-import * as DateHelper from './helpers/DateHelper'
+import { helpers } from 'jql-tools'
+
+let DateHelper = helpers.DateHelper
 
 function main () {
   // Normalize from and to date to follow standard Mixpanel

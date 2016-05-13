@@ -1,5 +1,7 @@
-import * as DateHelper from './DateHelper'
-import * as EventHelper from './EventHelper'
+import { helpers } from 'jql-tools'
+
+let DateHelper = helpers.DateHelper
+let EventHelper = helpers.EventHelper
 
 class RetentionState {
   constructor (options) {
