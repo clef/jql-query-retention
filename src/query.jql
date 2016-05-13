@@ -1,0 +1,115 @@
+/* globals params */
+/* Retention.jql
+ *
+ * A JQL query that gets retention data over a time period.
+ *
+ * Params:
+ *
+ *  - fromDate: new Date
+ *  - toDate: new Date
+ *  - startEvents: [ jql.types.Event ]
+ *
+ *    A series of events which together are the entrance condition. A
+ *    user must complete ALL of these events to be counted as a member
+ *    of the group we are measureing retention for. In other words,
+ *    they must do EventA AND EventB.
+ *
+ *  - retentionEvents: [ jql.types.Event ]
+ *
+ *    A set of events of which any can count sa the retention condition.
+ *    A user must complete ANY of these events to be counted
+ *    as retained on a given interval. In other words, they must do
+ *    EventA OR EventB.
+ *
+ *  - retentionInterval: Number (milliseconds)
+ *
+ *    The interval within which a user must complete an action to be
+ *    counted as retained. For instance, a retention interval of
+ *    1 day (8640000) means a user must complete one of the retentionEvents
+ *    in a 1 day interval to be counted as retained.
+ *
+ *  - retentionBuckets: [ Number ]
+ *
+ *    The number of intervals after the fromDate on which to measure retention.
+ *    For instance, if you have an interval of 1 day and retention buckets of
+ *    [0, 1, 7, 14, 30], this will return the retention for D0, D1, D7, D14,
+ *    and D30.
+ */
+
+import RetentionState from './helpers/RetentionState'
+import * as DateHelper from './helpers/DateHelper'
+
+function main () {
+  // Normalize from and to date to follow standard Mixpanel
+  // date format without hours (i.e. 2016-04-26)
+  params.fromDate = DateHelper.formatDate(params.fromDate)
+  params.toDate = DateHelper.formatDate(params.toDate)
+
+  return Events({
+    from_date: params.fromDate,
+    to_date: params.toDate,
+    event_selectors: params.startEvents.concat(params.retentionEvents)
+  })
+  // Build retention dictionaries for all users that had
+  // events during the time frame
+  .groupByUser(function (state, events) {
+    state = RetentionState.fromObject(state, params)
+    state.consume(events)
+    state.ensureAllBucketsHaveStatus()
+    return state.toObject()
+  })
+  // Filter out users who never completed the Start series
+  // of retention events
+  .filter(function (item) { return item.value.startEpoch })
+  // Group users by when they completed the Start series
+  // of retention events
+  .groupBy([function (item) { return item.value.startEpoch }], function (accums, items) {
+    var res = {}
+    var i = 0
+    var j = 0
+    var index = 0
+    for (i = 0; i < params.retentionBuckets.length; i++) {
+      index = params.retentionBuckets[i].toString()
+      res[index] = {}
+      res[index].converted = 0
+      res[index].total = 0
+      for (j = 0; j < items.length; j++) {
+        if (items[j].value.retention[index] === RetentionState.STATUS.PRESENT) {
+          res[index].converted++
+          res[index].total++
+        } else if (items[j].value.retention[index] === RetentionState.STATUS.ABSENT) {
+          res[index].total++
+        }
+      }
+      for (j = 0; j < accums.length; j++) {
+        res[index].converted += accums[j][index].converted
+        res[index].total += accums[j][index].total
+      }
+    }
+    return res
+  })
+  .reduce(function (accums, items) {
+    var data = {}
+    var item, index
+    for (var i = 0; i < accums.length; i++) {
+      for (var key in accums[i]) {
+        data[key] = accums[i][key]
+      }
+    }
+    for (i = 0; i < items.length; i++) {
+      for (var j = 0; j < params.retentionBuckets.length; j++) {
+        index = params.retentionBuckets[j]
+        if (!data[index]) {
+          data[index] = {}
+        }
+        item = items[i].value[params.retentionBuckets[j]]
+        if (item.total > 0) {
+          data[index][DateHelper.formatDate(new Date(items[i].key[0]))] = parseFloat((item.converted / item.total * 100).toFixed(2))
+        }
+      }
+    }
+    return data
+  })
+}
+
+export default main

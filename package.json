@@ -1,0 +1,41 @@
+{
+  "name": "@clef/jql-query-retention",
+  "version": "1.0.0",
+  "description": "A better Mixpanel retention query, written in JQL",
+  "main": "lib/index.js",
+  "scripts": {
+    "compile": "webpack",
+    "development": "webpack --watch",
+    "preversion": "npm run test",
+    "prepublish": "npm run compile",
+    "postpublish": "git push origin master && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clef/jql-query-retention.git"
+  },
+  "keywords": [
+    "jql",
+    "mixpanel",
+    "retention",
+    "analytics"
+  ],
+  "author": "Jesse Pollak",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/clef/jql-query-retention/issues"
+  },
+  "homepage": "https://github.com/clef/jql-query-retention#readme",
+  "devDependencies": {
+    "babel-cli": "^6.7.5",
+    "babel-core": "^6.7.6",
+    "babel-eslint": "^6.0.4",
+    "babel-loader": "^6.2.4",
+    "babel-preset-es2015": "^6.6.0",
+    "babel-preset-react": "^6.5.0",
+    "babel-preset-react-hmre": "^1.1.1",
+    "jql-loader": "^1.1.0",
+    "webpack": "^1.13.0",
+    "webpack-dev-server": "^1.14.1"
+  }
+}
