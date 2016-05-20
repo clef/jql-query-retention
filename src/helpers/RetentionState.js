@@ -14,6 +14,7 @@ class RetentionState {
 
     this.retention = options.retention || {}
     this.startEpoch = options.startEpoch || null
+    this.rolling = options.rolling || false
   }
 
   getEndDate () {
@@ -33,7 +34,7 @@ class RetentionState {
   }
 
   hasCompletedAllStartEventsAfterThisEvent (event) {
-    if (EventHelper.equals(this.startEvents[0], event)) this.startEvents.shift()
+    if (EventHelper.fulfills(this.startEvents[0], event)) this.startEvents.shift()
     return this.startEvents.length === 0
   }
 
@@ -52,7 +53,13 @@ class RetentionState {
   setRetainedOnDayOfEvent (event) {
     let dX = (this.getBeginningOfBucket(event.time) - this.startEpoch) / this.retentionInterval
     if (this.retentionBuckets.indexOf(dX) !== -1) {
-      this.retention[dX] = RetentionState.STATUS.PRESENT
+      if (this.rolling) {
+        for (let i = 0; i <= dX; i++) {
+          this.retention[i] = RetentionState.STATUS.PRESENT
+        }
+      } else {
+        this.retention[dX] = RetentionState.STATUS.PRESENT
+      }
     }
   }
 

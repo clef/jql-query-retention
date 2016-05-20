@@ -60,3 +60,7 @@ The number of intervals after the fromDate on which to measure retention.
 For instance, if you have an interval of 1 day and retention buckets of
 [0, 1, 7, 14, 30], this will return the retention for D0, D1, D7, D14,
 and D30.
+
+### rolling: Bool
+
+Whether the retention should be calculated as Rolling or Classic retention.
